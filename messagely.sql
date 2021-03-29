@@ -37,7 +37,7 @@ CREATE TABLE users (
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
   phone TEXT NOT NULL,
-  join_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
+  join_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   last_login_at TIMESTAMP WITH TIME ZONE);
 
 CREATE TABLE messages (

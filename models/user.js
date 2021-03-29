@@ -18,12 +18,12 @@ class User {
 
   static async register({ username, password, first_name, last_name, phone }) {
     const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
-    // const lastLogin = parseInt(Date.now()/1000)
-    // const lastLogin = 
 
     const result = await db.query(
-      `INSERT INTO users (username, password, first_name, last_name, phone, last_login_at)
-          VALUES ($1, $2, $3, $4, $5, $6)`, [username, hashedPassword, first_name, last_name, phone, lastLogin]);
+      `INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at)
+          VALUES ($1, $2, $3, $4, $5, current_timestamp, current_timestamp)
+          RETURNING username, password, first_name, last_name, phone`, [username, hashedPassword, first_name, last_name, phone]);
+    
     return result.rows[0];
   }
 
@@ -44,13 +44,12 @@ class User {
   /** Update last_login_at for user */
 
   static async updateLoginTimestamp(username) {
-    const lastLogin = Date.now()
     const results = await db.query(
       `UPDATE users
-        SET last_login_at = $1
-        WHERE username = $2
+        SET last_login_at = current_timestamp
+        WHERE username = $1
         RETURNING username, last_login_at`,
-        [lastLogin, username])
+        [username])
     if (results.rows.length === 0) {
       next (new UnauthorizedError());
     }
@@ -121,19 +120,25 @@ class User {
 
   static async messagesTo(username) {
     const messageResults = await db.query(
-      `SELECT id, body, sent_at, read_at
-        FROM messages WHERE to_username = $1`, [username])
+      `SELECT id, body, sent_at, read_at, username, first_name, last_name, phone
+        FROM messages m WHERE to_username = $1
+        JOIN users u ON u.username = m.to_username`, [username])
     const messages = messageResults.rows;
     if (!messages) {
       return next(new UnauthorizedError());
     }
-    const userResults = await db.query(
-      `SELECT username, first_name, last_name, phone
-      FROM users WHERE username = $1`, [username])
-    const user = userResults.rows[0]
-    for(let msg of messages) {
-      msg.to_user = user
+
+    let output = {
+      
     }
+
+    // const userResults = await db.query(
+    //   `SELECT username, first_name, last_name, phone
+    //   FROM users WHERE username = $1`, [username])
+    // const user = userResults.rows[0]
+    // for(let msg of messages) {
+    //   msg.to_user = user
+    // }
     return messages;
   }
 }
