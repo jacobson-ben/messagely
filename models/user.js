@@ -23,7 +23,7 @@ class User {
       `INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at)
           VALUES ($1, $2, $3, $4, $5, current_timestamp, current_timestamp)
           RETURNING username, password, first_name, last_name, phone`, [username, hashedPassword, first_name, last_name, phone]);
-    
+
     return result.rows[0];
   }
 
@@ -95,21 +95,29 @@ class User {
 
   static async messagesFrom(username) {
     const messageResults = await db.query(
-      `SELECT id, body, sent_at, read_at
-        FROM messages WHERE from_username = $1`, [username])
+      `SELECT id, body, sent_at, read_at, username, first_name, last_name, phone
+        FROM messages m JOIN users u ON u.username = m.to_username
+        WHERE from_username = $1
+        `, [username])
     const messages = messageResults.rows;
     if (!messages) {
       return next(new UnauthorizedError());
     }
-    const userResults = await db.query(
-      `SELECT username, first_name, last_name, phone
-      FROM users WHERE username = $1`, [username])
-    const user = userResults.rows[0]
-    for(let msg of messages) {
-      msg.from_user = user
-    }
-    return messages;
+    let output = messages.map(m => ({
+      id: m.id,
+      to_user: {
+        username: m.username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone
+      },
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.read_at
+    })) 
+    return output;
   }
+
   /** Return messages to this user.
    *
    * [{id, from_user, body, sent_at, read_at}]
@@ -121,25 +129,29 @@ class User {
   static async messagesTo(username) {
     const messageResults = await db.query(
       `SELECT id, body, sent_at, read_at, username, first_name, last_name, phone
-        FROM messages m WHERE to_username = $1
-        JOIN users u ON u.username = m.to_username`, [username])
+        FROM messages m JOIN users u ON u.username = m.from_username
+        WHERE to_username = $1
+        `, [username])
     const messages = messageResults.rows;
+
     if (!messages) {
       return next(new UnauthorizedError());
     }
 
-    let output = {
-      
-    }
-
-    // const userResults = await db.query(
-    //   `SELECT username, first_name, last_name, phone
-    //   FROM users WHERE username = $1`, [username])
-    // const user = userResults.rows[0]
-    // for(let msg of messages) {
-    //   msg.to_user = user
-    // }
-    return messages;
+    let output = messages.map(m => ({
+      id: m.id,
+      from_user: {
+        username: m.username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone
+      },
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.read_at
+    }))
+    
+    return output;
   }
 }
 
