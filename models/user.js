@@ -18,10 +18,13 @@ class User {
 
   static async register({ username, password, first_name, last_name, phone }) {
     const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
+    // const lastLogin = parseInt(Date.now()/1000)
+    // const lastLogin = 
+
     const result = await db.query(
-      `INSERT INTO users (username, password, first_name, last_name, phone)
-          VALUES ($1, $2, $3, $4, $5)`, [username, hashedPassword, first_name, last_name, phone])
-    return res.json(result.rows[0])
+      `INSERT INTO users (username, password, first_name, last_name, phone, last_login_at)
+          VALUES ($1, $2, $3, $4, $5, $6)`, [username, hashedPassword, first_name, last_name, phone, lastLogin]);
+    return result.rows[0];
   }
 
   /** Authenticate: is username/password valid? Returns boolean. */
@@ -42,20 +45,26 @@ class User {
 
   static async updateLoginTimestamp(username) {
     const lastLogin = Date.now()
-    db.query(
+    const results = await db.query(
       `UPDATE users
         SET last_login_at = $1
-        WHERE username = $2`, [lastLogin, username])
+        WHERE username = $2
+        RETURNING username, last_login_at`,
+        [lastLogin, username])
+    if (results.rows.length === 0) {
+      next (new UnauthorizedError());
+    }
+    
   }
 
   /** All: basic info on all users:
    * [{username, first_name, last_name}, ...] */
 
   static async all() {
-    const results = db.query(
+    const results = await db.query(
       `SELECT username, first_name, last_name
         FROM users`)
-    return res.json(results.rows)
+    return results.rows;
   }
 
   /** Get: get user by username
@@ -68,12 +77,15 @@ class User {
    *          last_login_at } */
 
   static async get(username) {
-    const results = db.query(
+    const results = await db.query(
       `SELECT username, first_name, last_name, phone, join_at, last_login_at
-        FROM users WHERE username = $1`, [username])
-    return res.json(results.rows[0])
+        FROM users WHERE username = $1`, [username]);
+    if (results.rows[0]) {
+      return results.rows[0];
+    } 
+    return next(new UnauthorizedError());
   }
-
+    
   /** Return messages from this user.
    *
    * [{id, to_user, body, sent_at, read_at}]
@@ -83,18 +95,21 @@ class User {
    */
 
   static async messagesFrom(username) {
-    const messageResults = db.query(
+    const messageResults = await db.query(
       `SELECT id, body, sent_at, read_at
         FROM messages WHERE from_username = $1`, [username])
-    const messages = messageResults.rows
-    const userResults = db.query(
+    const messages = messageResults.rows;
+    if (!messages) {
+      return next(new UnauthorizedError());
+    }
+    const userResults = await db.query(
       `SELECT username, first_name, last_name, phone
       FROM users WHERE username = $1`, [username])
     const user = userResults.rows[0]
     for(let msg of messages) {
       msg.from_user = user
     }
-    return res.json(messages)
+    return messages;
   }
   /** Return messages to this user.
    *
@@ -105,18 +120,21 @@ class User {
    */
 
   static async messagesTo(username) {
-    const messageResults = db.query(
+    const messageResults = await db.query(
       `SELECT id, body, sent_at, read_at
         FROM messages WHERE to_username = $1`, [username])
-    const messages = messageResults.rows
-    const userResults = db.query(
+    const messages = messageResults.rows;
+    if (!messages) {
+      return next(new UnauthorizedError());
+    }
+    const userResults = await db.query(
       `SELECT username, first_name, last_name, phone
       FROM users WHERE username = $1`, [username])
     const user = userResults.rows[0]
     for(let msg of messages) {
       msg.to_user = user
     }
-    return res.json(messages)
+    return messages;
   }
 }
 
