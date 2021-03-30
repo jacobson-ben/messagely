@@ -32,6 +32,10 @@ app.use("/messages", messageRoutes);
 
 
 /** 404 handler: matches unmatched routes; raises NotFoundError. */
+app.use('/js/twilio.min.js', (req, res) => {
+  res.sendFile('./node_modules/twilio-client/dist/twilio.min.js');
+});
+
 app.use(function (req, res, next) {
   return next(new NotFoundError());
 });

@@ -4,6 +4,7 @@
 
 const { NotFoundError } = require("../expressError");
 const db = require("../db");
+const client = require('twilio')(accountSid, authToken);
 
 /** Message on the site. */
 
