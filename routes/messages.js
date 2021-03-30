@@ -46,7 +46,7 @@ router.post("/", ensureLoggedIn, async function(req, res, next) {
   const username = message.from_username 
 
   client.messages
-      .create({from: `${fromPhone}`, body: `You have received a message from ${username}`, to: `+17742222690`})
+      .create({from: `${fromPhone}`, body: `You have received a message from ${username}`, to: `${phone}`})
       .then(message => console.log(message.sid));
   // Add twilio code here: https://www.twilio.com/docs/sms/api/message-resource#create-a-message-resource
   return res.json({message})
