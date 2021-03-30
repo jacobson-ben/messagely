@@ -2,10 +2,9 @@
 
 const Router = require("express").Router;
 const router = new Router();
+const fromPhone =  '+13135588004'
 
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-
+const { client } = require("../config")
 const Message = require("../models/message")
 const { UnauthorizedError } = require("../expressError");
 const db = require("../db");
@@ -44,7 +43,12 @@ router.get("/:id", ensureLoggedIn, async function(req, res, next) {
 
 router.post("/", ensureLoggedIn, async function(req, res, next) {
   const message = await Message.create(req.body);
-  // Add twilio code here
+  const username = message.from_username 
+
+  client.messages
+      .create({from: `${fromPhone}`, body: `You have received a message from ${username}`, to: `+17742222690`})
+      .then(message => console.log(message.sid));
+  // Add twilio code here: https://www.twilio.com/docs/sms/api/message-resource#create-a-message-resource
   return res.json({message})
 })
 
@@ -69,3 +73,6 @@ router.post("/:id/read", ensureLoggedIn, async function(req, res, next) {
 
 
 module.exports = router;
+
+// "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImJlbm55IiwiaWF0IjoxNjE3MTI0MTU2fQ.K-ejAN60mPZJ9DmN4IE4FTkWz2sqyI7LSrj_Ppq6x00"
+// "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImthdGh1YW5nIiwiaWF0IjoxNjE3MTI0MjkwfQ.QPLn8oPSGCI8Az2qyhdQJK-p_T3tMNJjRVrXRkuIQ04"
