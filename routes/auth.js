@@ -3,7 +3,7 @@ const express = require("express");
 const router = new express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { UnauthorizedError } = require("../expressError");
+const { BadRequestError } = require("../expressError");
 const db = require("../db");
 const User = require("../models/user")
 // const { ensureLoggedIn, ensureAdmin } = require("../middleware/auth");
@@ -24,7 +24,7 @@ router.post("/login", async function (req, res, next) {
       return res.json({ token });
     }
   }
-  throw new UnauthorizedError("Invalid user/password");
+  throw new BadRequestError("Invalid user/password");
 });
 
 
@@ -41,7 +41,7 @@ router.post("/login", async function (req, res, next) {
     let token = jwt.sign({username}, SECRET_KEY)
     return res.json({ token });
   }
-  throw new UnauthorizedError("Invalid user/password");
+  throw new BadRequestError("Invalid user/password");
   
 });
 

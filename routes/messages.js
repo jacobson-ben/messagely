@@ -2,9 +2,9 @@
 
 const Router = require("express").Router;
 const router = new Router();
-const fromPhone =  '+13135588004'
+// const fromPhone =  '+13135588004'
 
-const { client } = require("../config")
+// const { client } = require("../config")
 const Message = require("../models/message")
 const { UnauthorizedError } = require("../expressError");
 const db = require("../db");
@@ -45,9 +45,10 @@ router.post("/", ensureLoggedIn, async function(req, res, next) {
   const message = await Message.create(req.body);
   const username = message.from_username 
 
-  client.messages
-      .create({from: `${fromPhone}`, body: `You have received a message from ${username}`, to: `${phone}`})
-      .then(message => console.log(message.sid));
+  // client.messages
+  //     .create({from: `${fromPhone}`, body: `You have received a message from ${username}`, to: `${phone}`})
+  //     .then(message => console.log(message.sid));
+
   // Add twilio code here: https://www.twilio.com/docs/sms/api/message-resource#create-a-message-resource
   return res.json({message})
 })
